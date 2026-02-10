@@ -1,0 +1,84 @@
+import { FileText, Database, Server, Clock, Download } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+
+interface SidebarProps {
+  progress: number;
+}
+
+export function Sidebar({ progress }: SidebarProps) {
+  return (
+    <div className="w-80 border-l border-white/10 bg-slate-950/80 backdrop-blur-xl flex flex-col h-full shrink-0">
+      <div className="p-6 border-b border-white/10">
+        <h2 className="font-display font-bold text-lg text-white mb-1">ANALYSIS VAULT</h2>
+        <p className="text-xs text-slate-400">Secure Artifact Storage</p>
+      </div>
+
+      <div className="flex-1 p-6 space-y-8 overflow-y-auto tech-scrollbar">
+        
+        {/* PDF Generation Visual */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-end">
+            <span className="text-xs font-mono text-blue-400">REPORT_GEN_V2.PDF</span>
+            <span className="text-xs font-mono text-slate-500">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-1.5 bg-slate-900" indicatorClassName="bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+          
+          <div className="relative aspect-[3/4] bg-white/5 border border-white/10 rounded-md overflow-hidden p-3 space-y-3">
+             {/* Skeleton Page */}
+             <div className="h-4 w-3/4 bg-white/10 rounded animate-pulse delay-75" />
+             <div className="space-y-2">
+                <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-100" />
+                <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-150" />
+                <div className="h-2 w-5/6 bg-white/5 rounded animate-pulse delay-200" />
+             </div>
+             <div className="h-20 w-full bg-white/5 rounded mt-4 animate-pulse delay-300 border border-white/5" />
+             
+             {/* Scanline Effect over the PDF preview */}
+             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-[20%] animate-scanline pointer-events-none" />
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-slate-500 justify-center">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Compiling evidence...</span>
+          </div>
+        </div>
+
+        {/* Artifact List */}
+        <div className="space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Captured Artifacts</h3>
+          
+          <div className="space-y-2">
+            {[
+              { icon: Database, label: "DB_DUMP_PARTIAL.sql", size: "2.4 MB" },
+              { icon: Server, label: "AWS_CLOUDWATCH.json", size: "1.1 MB" },
+              { icon: FileText, label: "AUTH_CONTROLLER.py", size: "14 KB" },
+            ].map((item, i) => (
+              <div key={i} className="group flex items-center gap-3 p-3 rounded-md border border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer">
+                <div className="p-2 rounded bg-slate-900 text-slate-400 group-hover:text-blue-400 transition-colors">
+                  <item.icon className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-mono text-slate-300 truncate group-hover:text-white">{item.label}</div>
+                  <div className="text-[10px] text-slate-500">{item.size}</div>
+                </div>
+                <Download className="h-3 w-3 text-slate-600 group-hover:text-blue-400 opacity-0 group-hover:opacity-100 transition-all" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 border-t border-white/10 bg-slate-950">
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+           <Clock className="h-3 w-3" />
+           <span className="font-mono">SESSION: 2h 14m</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Loader2({ className }: { className?: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+}
