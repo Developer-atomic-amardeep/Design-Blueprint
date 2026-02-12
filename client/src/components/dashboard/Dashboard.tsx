@@ -26,9 +26,10 @@ export function Dashboard() {
   useEffect(() => {
     if (!isAnalyzing) return;
 
+    // Accelerated analysis: ~30 seconds (100 / (100 * 0.033))
     const interval = setInterval(() => {
       (["github", "aws", "slack"] as AgentType[]).forEach(type => {
-        if (Math.random() > 0.7) {
+        if (Math.random() > 0.6) {
           const msg = MESSAGES[type][Math.floor(Math.random() * MESSAGES[type].length)];
           const level = LEVELS[Math.floor(Math.random() * LEVELS.length)];
           const newLog = {
@@ -40,26 +41,32 @@ export function Dashboard() {
           
           setLogs(prev => ({
             ...prev,
-            [type]: [...prev[type].slice(-20), newLog]
+            [type]: [...prev[type].slice(-50), newLog]
           }));
         }
       });
       
-      setProgress(p => Math.min(p + 0.5, 100));
+      // Update progress to finish in ~30s (approx 1% per 300ms)
+      setProgress(p => {
+        const next = p + 1.2;
+        if (next >= 100) {
+            clearInterval(interval);
+            setIsAnalyzing(false);
+            setPhase(2);
+            return 100;
+        }
+        return next;
+      });
 
-      if (progress >= 100) {
-          setPhase(2);
-          setIsAnalyzing(false);
-      }
-
-    }, 800);
+    }, 300);
 
     return () => clearInterval(interval);
-  }, [isAnalyzing, progress]);
+  }, [isAnalyzing]);
 
   const handleTrigger = () => {
     setLogs({ github: [], aws: [], slack: [] });
     setIsAnalyzing(true);
+    setPhase(1);
     setProgress(0);
   };
 
@@ -82,7 +89,7 @@ export function Dashboard() {
             <AgentColumn type="slack" isPhase2={phase === 2} logs={logs.slack} isAnalyzing={isAnalyzing} />
           </div>
 
-          {phase === 2 && <SmokingGunPanel />}
+          {phase === 2 && <SmokingGunPanel onClose={() => setPhase(1)} />}
         </main>
 
         <Sidebar progress={Math.floor(progress)} />

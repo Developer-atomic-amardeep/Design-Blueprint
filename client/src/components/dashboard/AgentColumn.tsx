@@ -1,8 +1,9 @@
 import { useRef, useEffect, useState } from "react";
-import { GitBranch, Server, Slack, Lock, ChevronUp, Loader2, Cpu, Zap, Activity, Waves } from "lucide-react";
+import { GitBranch, Server, Slack, Lock, ChevronUp, Loader2, Activity, Waves, X, Maximize2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export type AgentType = "github" | "aws" | "slack";
 
@@ -52,6 +53,7 @@ export function AgentColumn({ type, isPhase2, logs, isAnalyzing }: AgentColumnPr
   const Icon = config.icon;
   const scrollRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
@@ -60,89 +62,116 @@ export function AgentColumn({ type, isPhase2, logs, isAnalyzing }: AgentColumnPr
         scrollElement.scrollTop = scrollElement.scrollHeight;
       }
     }
-  }, [logs, autoScroll]);
+  }, [logs, autoScroll, isZoomed]);
 
-  return (
-    <div className={cn(
-      "relative flex flex-col h-full transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]",
-      "border rounded-xl overflow-hidden glass-card",
-      config.borderColor,
-      config.glowColor,
-      isPhase2 ? "min-h-[140px]" : "flex-1"
-    )}>
-      <div className={cn("p-4 border-b flex items-center justify-between bg-slate-950/40", config.borderColor)}>
-        <div className="flex items-center gap-3">
-          <div className={cn("p-2 rounded-lg relative overflow-hidden", config.bgColor)}>
-            <Icon className={cn("h-5 w-5 relative z-10", config.textColor)} />
-            <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent animate-pulse" />
-          </div>
-          <div>
-            <h3 className={cn("font-display font-bold tracking-widest text-xs", config.textColor)}>{config.name}</h3>
-            <div className="flex items-center gap-2 mt-0.5">
-               <span className="relative flex h-1.5 w-1.5">
-                  <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", config.bgColor)}></span>
-                  <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", config.textColor.replace('text-', 'bg-'))}></span>
-                </span>
-                <span className="text-[9px] text-slate-500 font-mono tracking-tighter">WAITING_FOR_COMMAND</span>
-            </div>
+  const AgentHeader = ({ inModal = false }) => (
+    <div className={cn("p-4 border-b flex items-center justify-between bg-slate-950/40", config.borderColor)}>
+      <div className="flex items-center gap-3">
+        <div className={cn("p-2 rounded-lg relative overflow-hidden", config.bgColor)}>
+          <Icon className={cn("h-5 w-5 relative z-10", config.textColor)} />
+          <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent animate-pulse" />
+        </div>
+        <div>
+          <h3 className={cn("font-display font-bold tracking-widest text-xs", config.textColor)}>{config.name}</h3>
+          <div className="flex items-center gap-2 mt-0.5">
+             <span className="relative flex h-1.5 w-1.5">
+                <span className={cn("animate-ping absolute inline-flex h-full w-full rounded-full opacity-75", config.bgColor)}></span>
+                <span className={cn("relative inline-flex rounded-full h-1.5 w-1.5", config.textColor.replace('text-', 'bg-'))}></span>
+              </span>
+              <span className="text-[9px] text-slate-500 font-mono tracking-tighter">
+                {isAnalyzing ? "ANALYZING_DATA" : "WAITING_FOR_COMMAND"}
+              </span>
           </div>
         </div>
       </div>
-
-      <div className="flex-1 relative bg-black/40 group">
-        {!isAnalyzing && logs.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center p-8">
-             <div className="text-center space-y-4 animate-in fade-in zoom-in duration-1000">
-                <div className="relative inline-block">
-                    <Waves className="h-12 w-12 text-slate-800 animate-[pulse_3s_infinite]" />
-                    <Activity className="h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-700/50" />
-                </div>
-                <div className="space-y-1">
-                    <p className="text-slate-500 font-mono text-[10px] tracking-[0.3em] font-bold uppercase border-y border-white/5 py-2 px-4 bg-white/2 backdrop-blur-sm">
-                        Waiting for analysis trigger
-                    </p>
-                    <div className="flex justify-center gap-1">
-                        <div className="h-1 w-1 bg-white/10 rounded-full animate-bounce" />
-                        <div className="h-1 w-1 bg-white/10 rounded-full animate-bounce [animation-delay:0.2s]" />
-                        <div className="h-1 w-1 bg-white/10 rounded-full animate-bounce [animation-delay:0.4s]" />
-                    </div>
-                </div>
-             </div>
-          </div>
-        )}
-
-        {isAnalyzing && logs.length === 0 && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950/20 backdrop-blur-[2px]">
-             <div className="relative">
-                <Loader2 className={cn("h-10 w-10 animate-spin opacity-40", config.textColor)} />
-                <div className={cn("absolute inset-0 animate-ping rounded-full border border-current opacity-20", config.textColor)} />
-             </div>
-             <p className={cn("font-mono text-[9px] tracking-[0.4em] uppercase font-bold", config.textColor)}>Initializing Neural Link</p>
-          </div>
-        )}
-
-        {logs.length > 0 && (
-          <ScrollArea ref={scrollRef} className="h-full w-full">
-              <div className="p-4 space-y-3 font-mono text-[11px] leading-relaxed">
-                  {logs.map((log) => (
-                      <div key={log.id} className="flex gap-3 animate-in fade-in slide-in-from-left-1 duration-300">
-                          <span className="text-slate-700 shrink-0 font-light select-none">[{log.timestamp}]</span>
-                          <span className={cn(
-                              "break-all",
-                              log.level === "error" ? "text-red-400 font-medium" :
-                              log.level === "warn" ? "text-orange-400" :
-                              log.level === "success" ? "text-emerald-400" :
-                              "text-slate-400"
-                          )}>
-                              {log.message}
-                          </span>
-                      </div>
-                  ))}
-                  <div className="h-4" />
-              </div>
-          </ScrollArea>
-        )}
-      </div>
+      {!inModal && !isPhase2 && (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-slate-500 hover:text-white hover:bg-white/5"
+          onClick={() => setIsZoomed(true)}
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
+  );
+
+  const AgentContent = () => (
+    <div className="flex-1 relative bg-black/40 group overflow-hidden flex flex-col h-full">
+      {!isAnalyzing && logs.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+           <div className="text-center space-y-4 animate-in fade-in zoom-in duration-1000">
+              <div className="relative inline-block">
+                  <Waves className="h-12 w-12 text-slate-800 animate-[pulse_3s_infinite]" />
+                  <Activity className="h-6 w-6 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-slate-700/50" />
+              </div>
+              <div className="space-y-1">
+                  <p className="text-slate-500 font-mono text-[10px] tracking-[0.3em] font-bold uppercase border-y border-white/5 py-2 px-4 bg-white/2 backdrop-blur-sm">
+                      Waiting for analysis trigger
+                  </p>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {isAnalyzing && logs.length === 0 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-slate-950/20 backdrop-blur-[2px]">
+           <div className="relative">
+              <Loader2 className={cn("h-10 w-10 animate-spin opacity-40", config.textColor)} />
+              <div className={cn("absolute inset-0 animate-ping rounded-full border border-current opacity-20", config.textColor)} />
+           </div>
+           <p className={cn("font-mono text-[9px] tracking-[0.4em] uppercase font-bold", config.textColor)}>Initializing Neural Link</p>
+        </div>
+      )}
+
+      {logs.length > 0 && (
+        <ScrollArea ref={scrollRef} className="flex-1 w-full">
+            <div className="p-4 space-y-3 font-mono text-[11px] leading-relaxed">
+                {logs.map((log) => (
+                    <div key={log.id} className="flex gap-3 animate-in fade-in slide-in-from-left-1 duration-300">
+                        <span className="text-slate-700 shrink-0 font-light select-none">[{log.timestamp}]</span>
+                        <span className={cn(
+                            "break-all",
+                            log.level === "error" ? "text-red-400 font-medium" :
+                            log.level === "warn" ? "text-orange-400" :
+                            log.level === "success" ? "text-emerald-400" :
+                            "text-slate-400"
+                        )}>
+                            {log.message}
+                        </span>
+                    </div>
+                ))}
+                <div className="h-4" />
+            </div>
+        </ScrollArea>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <div className={cn(
+        "relative flex flex-col h-full transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]",
+        "border rounded-xl overflow-hidden glass-card cursor-pointer group/card",
+        config.borderColor,
+        config.glowColor,
+        isPhase2 ? "min-h-[140px]" : "flex-1"
+      )}
+      onClick={() => !isPhase2 && setIsZoomed(true)}
+      >
+        <AgentHeader />
+        <AgentContent />
+      </div>
+
+      <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
+        <DialogContent className="max-w-[90vw] w-[1200px] h-[80vh] bg-slate-950/95 backdrop-blur-2xl border-white/10 p-0 overflow-hidden flex flex-col gap-0 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          <AgentHeader inModal />
+          <div className="flex-1 overflow-hidden">
+             <AgentContent />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

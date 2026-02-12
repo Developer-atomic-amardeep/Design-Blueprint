@@ -1,4 +1,4 @@
-import { FileText, Database, Server, Clock, Download } from "lucide-react";
+import { FileText, Database, Server, Clock, Download, Loader2, Binary, Cpu, Share2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -19,28 +19,51 @@ export function Sidebar({ progress }: SidebarProps) {
         {/* PDF Generation Visual */}
         <div className="space-y-4">
           <div className="flex justify-between items-end">
-            <span className="text-xs font-mono text-blue-400">REPORT_GEN_V2.PDF</span>
+            <span className="text-xs font-mono text-blue-400 tracking-tighter">REPORT_GEN_V2.PDF</span>
             <span className="text-xs font-mono text-slate-500">{progress}%</span>
           </div>
           <Progress value={progress} className="h-1.5 bg-slate-900" indicatorClassName="bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
           
           <div className="relative aspect-[3/4] bg-white/5 border border-white/10 rounded-md overflow-hidden p-3 space-y-3">
-             {/* Skeleton Page */}
-             <div className="h-4 w-3/4 bg-white/10 rounded animate-pulse delay-75" />
-             <div className="space-y-2">
-                <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-100" />
-                <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-150" />
-                <div className="h-2 w-5/6 bg-white/5 rounded animate-pulse delay-200" />
-             </div>
-             <div className="h-20 w-full bg-white/5 rounded mt-4 animate-pulse delay-300 border border-white/5" />
+             {progress < 100 ? (
+               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 space-y-4">
+                  <div className="grid grid-cols-2 gap-2 opacity-20">
+                    <Binary className="h-6 w-6 animate-pulse" />
+                    <Cpu className="h-6 w-6 animate-pulse delay-100" />
+                    <Share2 className="h-6 w-6 animate-pulse delay-200" />
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                  <div className="w-full space-y-2">
+                    <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500/40 animate-progress-indeterminate" />
+                    </div>
+                    <p className="text-[8px] font-mono text-slate-500 text-center uppercase tracking-widest">Compiling stream segments</p>
+                  </div>
+               </div>
+             ) : (
+               <>
+                 <div className="h-4 w-3/4 bg-white/10 rounded animate-pulse delay-75" />
+                 <div className="space-y-2">
+                    <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-100" />
+                    <div className="h-2 w-full bg-white/5 rounded animate-pulse delay-150" />
+                    <div className="h-2 w-5/6 bg-white/5 rounded animate-pulse delay-200" />
+                 </div>
+                 <div className="h-20 w-full bg-white/5 rounded mt-4 animate-pulse delay-300 border border-white/5" />
+               </>
+             )}
              
-             {/* Scanline Effect over the PDF preview */}
              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/5 to-transparent h-[20%] animate-scanline pointer-events-none" />
           </div>
           
-          <div className="flex items-center gap-2 text-xs text-slate-500 justify-center">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Compiling evidence...</span>
+          <div className="flex items-center gap-2 text-[10px] text-slate-500 justify-center font-mono">
+            {progress < 100 ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>INDEXING_EVIDENCE...</span>
+              </>
+            ) : (
+              <span className="text-emerald-500 tracking-widest">ARTIFACT_SEALED</span>
+            )}
           </div>
         </div>
 
@@ -77,8 +100,4 @@ export function Sidebar({ progress }: SidebarProps) {
       </div>
     </div>
   );
-}
-
-function Loader2({ className }: { className?: string }) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
 }
