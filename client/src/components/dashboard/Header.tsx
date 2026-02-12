@@ -1,8 +1,7 @@
 import { Shield, Check, Loader2, Link as LinkIcon, Activity } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -12,6 +11,20 @@ interface HeaderProps {
 
 export function Header({ onTrigger, isPhase2 }: HeaderProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [showOptimal, setShowOptimal] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowOptimal(true);
+      // Run "automatic trigger" feel
+      const interval = setInterval(() => {
+        setShowOptimal(false);
+        setTimeout(() => setShowOptimal(true), 2000);
+      }, 60000);
+      return () => clearInterval(interval);
+    }, 60000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleTrigger = () => {
     if (status !== "idle") return;
@@ -30,7 +43,7 @@ export function Header({ onTrigger, isPhase2 }: HeaderProps) {
       <div className="flex items-center gap-6 w-full max-w-4xl">
         <div className="flex items-center gap-2 text-primary font-display font-bold text-xl tracking-wider">
           <Shield className="h-6 w-6" />
-          <span>INCIDENT<span className="text-white">COMMAND</span></span>
+          <span>INCIDENT<span className="text-white">IQ</span></span>
         </div>
 
         {/* Command & Control Inputs */}
@@ -39,32 +52,35 @@ export function Header({ onTrigger, isPhase2 }: HeaderProps) {
             <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-primary transition-colors" />
             <Input 
               defaultValue="INC-3928: Latency Spike" 
-              className="pl-9 bg-slate-900/50 border-white/10 focus:border-primary/50 font-mono text-sm h-9" 
+              className="pl-9 text-right bg-slate-900/50 border-white/10 focus:border-primary/50 font-mono text-sm h-9" 
             />
           </div>
-          <div className="relative w-32 group">
-            <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
-            <Input 
-              defaultValue="SEV-1" 
-              className="pl-9 bg-slate-900/50 border-white/10 focus:border-orange-500/50 text-orange-400 font-mono text-sm h-9 font-bold" 
-            />
-          </div>
-          <div className="relative w-48 group">
-             <div className="absolute left-3 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-            <Input 
-              defaultValue="Cmdr. Sarah Connor" 
-              className="pl-8 bg-slate-900/50 border-white/10 focus:border-emerald-500/50 font-mono text-sm h-9" 
-            />
+          
+          {/* Animated Spike Graph */}
+          <div className="w-32 h-9 flex items-end gap-[2px] px-2 py-1 bg-slate-900/50 border border-white/10 rounded-md overflow-hidden">
+             {[...Array(12)].map((_, i) => (
+               <div 
+                key={i} 
+                className="flex-1 bg-primary/40 animate-pulse" 
+                style={{ 
+                  height: `${Math.random() * 100}%`,
+                  animationDelay: `${i * 0.1}s`,
+                  animationDuration: '0.5s'
+                }} 
+               />
+             ))}
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Health Badge Pulse */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse-ring" />
-          <span className="text-xs font-medium text-emerald-400 tracking-wider">SYSTEM OPTIMAL</span>
-        </div>
+        {/* Health Badge Pulse - Shown after 1 minute */}
+        {showOptimal && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 animate-in fade-in duration-500">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse-ring" />
+            <span className="text-xs font-medium text-emerald-400 tracking-wider">SYSTEM OPTIMAL</span>
+          </div>
+        )}
 
         <div className="h-6 w-px bg-white/10 mx-2" />
 

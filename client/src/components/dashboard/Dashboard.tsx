@@ -5,7 +5,6 @@ import { AgentColumn, AgentType } from "./AgentColumn";
 import { SmokingGunPanel } from "./Phase2Layout";
 import { cn } from "@/lib/utils";
 
-// Mock Data Generators
 const MESSAGES = {
   github: ["Checking recent commits...", "Analyzing diffs for PR #392...", "Scanning for unauthorized secrets...", "Validating CI/CD pipelines...", "Commit 8a2b9c verified clean.", "Checking dependency graph...", "Fetching blame for auth.ts"],
   aws: [" querying CloudWatch metrics...", "Analyzing Lambda concurrency...", "Checking RDS connection pool...", "VPC Flow Logs analysis...", "Detected high latency in us-east-1", "Auto-scaling group health check: OK", "S3 Bucket permissions verified."],
@@ -16,6 +15,7 @@ const LEVELS = ["info", "info", "info", "success", "warn", "info", "info"] as co
 
 export function Dashboard() {
   const [phase, setPhase] = useState<1 | 2>(1);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [logs, setLogs] = useState<Record<AgentType, any[]>>({
     github: [],
     aws: [],
@@ -23,10 +23,10 @@ export function Dashboard() {
   });
   const [progress, setProgress] = useState(0);
 
-  // Simulation Effect
   useEffect(() => {
+    if (!isAnalyzing) return;
+
     const interval = setInterval(() => {
-      // Add random logs
       (["github", "aws", "slack"] as AgentType[]).forEach(type => {
         if (Math.random() > 0.7) {
           const msg = MESSAGES[type][Math.floor(Math.random() * MESSAGES[type].length)];
@@ -45,45 +45,44 @@ export function Dashboard() {
         }
       });
       
-      // Update Progress
-      setProgress(p => Math.min(p + (phase === 1 ? 0.2 : 0), 100));
+      setProgress(p => Math.min(p + 0.5, 100));
+
+      if (progress >= 100) {
+          setPhase(2);
+          setIsAnalyzing(false);
+      }
 
     }, 800);
 
     return () => clearInterval(interval);
-  }, [phase]);
+  }, [isAnalyzing, progress]);
 
-  // Handle Phase Transition
   const handleTrigger = () => {
-    setPhase(2);
-    setProgress(100);
+    setLogs({ github: [], aws: [], slack: [] });
+    setIsAnalyzing(true);
+    setProgress(0);
   };
 
   return (
     <div className="flex flex-col h-screen bg-[url('/grid-pattern.svg')] bg-cover">
       <div className="absolute inset-0 bg-slate-950/90 pointer-events-none" />
       
-      <Header onTrigger={handleTrigger} isPhase2={phase === 2} />
+      <Header onTrigger={handleTrigger} isPhase2={phase === 2 || isAnalyzing} />
 
       <div className="flex flex-1 overflow-hidden relative z-10">
-        {/* Main Content Area */}
         <main className="flex-1 flex flex-col p-6 gap-6 overflow-hidden transition-all duration-700">
-          
-          {/* Agent Columns Container */}
           <div 
             className={cn(
               "grid grid-cols-3 gap-6 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]",
               phase === 2 ? "h-[30%] shrink-0" : "h-full"
             )}
           >
-            <AgentColumn type="github" isPhase2={phase === 2} logs={logs.github} />
-            <AgentColumn type="aws" isPhase2={phase === 2} logs={logs.aws} />
-            <AgentColumn type="slack" isPhase2={phase === 2} logs={logs.slack} />
+            <AgentColumn type="github" isPhase2={phase === 2} logs={logs.github} isAnalyzing={isAnalyzing} />
+            <AgentColumn type="aws" isPhase2={phase === 2} logs={logs.aws} isAnalyzing={isAnalyzing} />
+            <AgentColumn type="slack" isPhase2={phase === 2} logs={logs.slack} isAnalyzing={isAnalyzing} />
           </div>
 
-          {/* Phase 2: Smoking Gun Panel */}
           {phase === 2 && <SmokingGunPanel />}
-          
         </main>
 
         <Sidebar progress={Math.floor(progress)} />
